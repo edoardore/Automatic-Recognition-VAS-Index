@@ -1,6 +1,6 @@
 # Automatic-Recognition-VAS-Index
 
-Questo progetto contiene l'implementazione di un sistema di riconoscimento automatico del dolore provato da una persona in scala VAS da 0 a 10(Visual Analog Scale).
+Nel progetto si implementa di un sistema di riconoscimento automatico del dolore provato da una persona in scala VAS da 0 a 10(Visual Analog Scale).
 * Analisi della sequenza di frames in cui la faccia del soggetto viene mostrata
 * Predizione del dolore percepito in base alla posizione di landmarks facciali
 
