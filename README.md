@@ -19,6 +19,6 @@ pip install seaborn v.0.11.0
 
 # Risultati ottenuti:
 
-* Original Code by: [Alessandro Arezzo](https://github.com/AlessandroArezzo/Automatic-Recognition-VAS-Index) (2021)
+# Original Code by: [Alessandro Arezzo](https://github.com/AlessandroArezzo/Automatic-Recognition-VAS-Index) (2021)
 
 
