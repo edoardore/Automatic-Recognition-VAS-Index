@@ -1,19 +1,17 @@
 # Automatic-Recognition-VAS-Index
 
-This project contains the implementation of an automatic recognition system for pain perceived by a person. <br>
-The goal of the system is therefore to analyze a sequence of frames in which the face of a subject is represented 
-and then predict his perceived pain level based on the position of the subject's facial landmarks. 
-The pain level is represented with an integer index between 0 and 10 called VAS (Visual Analog Scale).
+Questo progetto contiene l'implementazione di un sistema di riconoscimento automatico del dolore provato da una persona in scala VAS da 0 a 10(Visual Analog Scale).
+* Analisi della sequenza di frames in cui la faccia del soggetto viene mostrata
+* Predizione del dolore percepito in base alla posizione di landmarks facciali
 
-<h2>Prerequisites</h2>
-To use the code you need to have the following libraries installed:
-<ul>
-  <li>scikit-learn v.0.23.1</li>
-  <li>pandas v.1.0.5</li>
-  <li>matplotlib v.3.2.2</li>
-  <li>numpy v.1.19.0</li>
-  <li>seaborn v.0.11.0</li>
-</ul>
+# Prerequisites
+```python
+pip install scikit-learn v.0.23.1
+pip install pandas v.1.0.5
+pip install matplotlib v.3.2.2
+pip install numpy v.1.19.0
+pip install seaborn v.0.11.0
+```
 
 # Modifiche Realizzate:
 * Decomposto il moulo dei vettori di moto dei landmark facciali in singole componenti x ed y nel file: PreliminaryClustering.py in __get_velocities_frames()
