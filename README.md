@@ -18,6 +18,11 @@ pip install seaborn v.0.11.0
 * Aggiunte le due componenti x ed y del moto della punta del naso corrispondenti al landmark numero 30, modificata la lista dei landmark considerati in: config.py
 
 # Risultati ottenuti:
+Si mostra di seguito la matrice di confusione con 3 livelli di dolore nella versione originale proposta da Arezzo:
+![originale](https://github.com/edoardore/Automatic-Recognition-VAS-Index/blob/master/ImplementazioneOriginale.png)
+
+L'aggiunta delle due modifiche degrada sfortunatamente le performance nella predizione, si mostra di seguito la corrispondente matrice di confusione:
+![modifiche](https://github.com/edoardore/Automatic-Recognition-VAS-Index/blob/master/Modifiche.png)
 
 # Original Code by: [Alessandro Arezzo](https://github.com/AlessandroArezzo/Automatic-Recognition-VAS-Index) (2021)
 
