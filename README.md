@@ -15,7 +15,7 @@ To use the code you need to have the following libraries installed:
   <li>seaborn v.0.11.0</li>
 </ul>
 
-# Modifiche:
+# Modifiche Realizzate:
 * Decomposto il moulo dei vettori di moto dei landmark facciali in singole componenti x ed y nel file: PreliminaryClustering.py in __get_velocities_frames()
 * Aggiunte le due componenti x ed y del moto della punta del naso corrispondenti al landmark numero 30, modificata la lista dei landmark considerati in: config.py
 
