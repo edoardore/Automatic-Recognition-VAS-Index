@@ -21,7 +21,7 @@ pip install seaborn v.0.11.0
 Si mostra di seguito la matrice di confusione con 3 livelli di dolore nella versione originale proposta da Arezzo:
 ![originale](https://github.com/edoardore/Automatic-Recognition-VAS-Index/blob/master/ImplementazioneOriginale.png)
 
-L'aggiunta delle due modifiche degrada sfortunatamente le performance nella predizione.
+L'aggiunta delle modifiche in __get_velocity_frames() degrada sfortunatamente le performance nella predizione.
 ![modifiche](https://github.com/edoardore/Automatic-Recognition-VAS-Index/blob/master/Modifiche.png)
 
 # Original Code by: [Alessandro Arezzo](https://github.com/AlessandroArezzo/Automatic-Recognition-VAS-Index) (2021)
