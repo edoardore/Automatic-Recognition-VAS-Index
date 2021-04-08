@@ -29,6 +29,7 @@ class PreliminaryClustering:
         self.histograms_of_videos = None  # histograms of all sequences contained in dataset
         self.index_relevant_configurations = None  # indexes of the clusters to considered as relevant
         self.index_neutral_configurations = None  # indexes of the clusters to considered as neutral (not to use for VAS classification)
+        self.centroids_frame_of_sequence = []
 
     def __get_velocities_frames(self):
         """
@@ -64,7 +65,7 @@ class PreliminaryClustering:
 
             for i in range(0, len(nose_tip_y) - 1):
                 lndk_vel_y[i][30] = nose_tip_y[i] - nose_tip_y[i + 1]
-             
+
             data_velocities = []
             for k in np.arange(1, lndk_vel_x.shape[0]):
                 data_velocities.append(np.array(lndk_vel_x[k, self.selected_lndks_idx]))
@@ -72,7 +73,6 @@ class PreliminaryClustering:
             velocities.append(np.array(data_velocities))
 
         return velocities
-
 
     def __scale_features(self, velocities):
         """
@@ -167,12 +167,22 @@ class PreliminaryClustering:
         for video_fv in self.fisher_vectors:
             current_video_fv = video_fv[0]
             video_histogram = np.zeros(self.n_kernels)
+            centroid_clusters_frame = np.zeros(self.n_kernels)
+            max = np.zeros(self.n_kernels)
+            frame_number = 0
             for frame in current_video_fv:
                 for index_configuration in range(0, self.n_kernels):
                     video_histogram[index_configuration] += sum(frame[index_configuration]) + \
                                                             sum(frame[index_configuration + self.n_kernels])
+                    if sum(frame[index_configuration]) + sum(frame[index_configuration + self.n_kernels]) > \
+                            max[index_configuration]:
+                        max[index_configuration] = sum(frame[index_configuration]) + sum(
+                            frame[index_configuration + self.n_kernels])
+                        centroid_clusters_frame[index_configuration] = frame_number
+                frame_number += 1
             video_histogram = video_histogram / sum(video_histogram)
             histograms_of_videos.append(video_histogram)
+            self.centroids_frame_of_sequence.append(centroid_clusters_frame)
         return histograms_of_videos
 
     def __extract_relevant_and_neutral_configurations(self):
@@ -200,6 +210,20 @@ class PreliminaryClustering:
                         index_neutral_configurations.append(j)
         index_relevant_configurations = [x for x in np.arange(self.n_kernels) if x not in index_neutral_configurations]
         return index_relevant_configurations, index_neutral_configurations
+
+    def __test_centroid_cluster_frame_velocity(self):
+        index_relevant = self.index_relevant_configurations
+        velocities = self.__get_velocities_frames()
+        vel_lndk = []
+        total_vel_lndk = []
+        sequence_num = 0
+        for sequence in velocities:
+            for index in index_relevant:
+                frame = self.centroids_frame_of_sequence[sequence_num][index]
+                vel_lndk = sequence[frame, :]
+            sequence_num += 1
+            total_vel_lndk.append(vel_lndk)
+        print(total_vel_lndk)
 
     def __plot_and_save_histograms(self, histo_figures_path):
         """
@@ -235,6 +259,7 @@ class PreliminaryClustering:
         self.histograms_of_videos = self.__generate_histograms()
         self.index_relevant_configurations, self.index_neutral_configurations = \
             self.__extract_relevant_and_neutral_configurations()
+        self.__test_centroid_cluster_frame_velocity()
         if histo_figures_path is not None:
             self.__plot_and_save_histograms(histo_figures_path)
         if preliminary_clustering_dump_path is not None:
