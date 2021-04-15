@@ -5,6 +5,7 @@ from fishervector import FisherVectorGMM
 from sklearn.preprocessing import RobustScaler
 import matplotlib.pyplot as plt
 import matplotlib
+from FisherV import FisherVectorV
 
 matplotlib.use('Agg')
 
@@ -29,7 +30,7 @@ class PreliminaryClustering:
         self.histograms_of_videos = None  # histograms of all sequences contained in dataset
         self.index_relevant_configurations = None  # indexes of the clusters to considered as relevant
         self.index_neutral_configurations = None  # indexes of the clusters to considered as neutral (not to use for VAS classification)
-        self.centroids_frame_of_sequence = []
+        self.likelihood_ratios = []
 
     def __get_velocities_frames(self):
         """
@@ -50,28 +51,15 @@ class PreliminaryClustering:
             offset = np.hstack((np.repeat(nose_tip_x.reshape(-1, 1), self.num_lndks, axis=1),
                                 np.repeat(nose_tip_y.reshape(-1, 1), self.num_lndks, axis=1)))
             lndks_centered = lndks - offset
-
-            # Componenti x ed y vettori di moto
-            lndk_vel_x = lndks_centered[0:lndks_centered.shape[0] - 1, 0:self.num_lndks] - lndks_centered[
-                                                                                           1:lndks_centered.shape[0],
-                                                                                           0:self.num_lndks]
-
-            lndk_vel_y = lndks_centered[0:lndks_centered.shape[0] - 1, self.num_lndks:] - lndks_centered[
-                                                                                          1:lndks_centered.shape[0],
-                                                                                          self.num_lndks:]
-            # Componenti x ed y del vettore di moto della punta del naso, (lndk 30, aggiunto in config.py)
-            for i in range(0, len(nose_tip_x) - 1):
-                lndk_vel_x[i][30] = nose_tip_x[i] - nose_tip_x[i + 1]
-
-            for i in range(0, len(nose_tip_y) - 1):
-                lndk_vel_y[i][30] = nose_tip_y[i] - nose_tip_y[i + 1]
-
+            lndk_vel = np.power(np.power(lndks_centered[0:lndks_centered.shape[0] - 1, 0:self.num_lndks] -
+                                         lndks_centered[1:lndks_centered.shape[0], 0:self.num_lndks], 2) +
+                                np.power(lndks_centered[0:lndks_centered.shape[0] - 1, self.num_lndks:] -
+                                         lndks_centered[1:lndks_centered.shape[0], self.num_lndks:], 2),
+                                0.5)
             data_velocities = []
-            for k in np.arange(1, lndk_vel_x.shape[0]):
-                data_velocities.append(np.array(lndk_vel_x[k, self.selected_lndks_idx]))
-                data_velocities.append(np.array(lndk_vel_y[k, self.selected_lndks_idx]))
+            for k in np.arange(1, lndk_vel.shape[0]):
+                data_velocities.append(np.array(lndk_vel[k, self.selected_lndks_idx]))
             velocities.append(np.array(data_velocities))
-
         return velocities
 
     def __scale_features(self, velocities):
@@ -151,8 +139,46 @@ class PreliminaryClustering:
         fisher_vectors = []
         for feature in velocities:
             fv = self.gmm.predict(np.array(feature).reshape(1, feature.shape[0], 1, n_features_for_frame))
+            lr = FisherVectorV.compute_likelihood_ratio(self.gmm,
+                                                        np.array(feature).reshape(1, feature.shape[0], 1,
+                                                                                  n_features_for_frame))
             fisher_vectors.append(fv)
+            self.likelihood_ratios.append(lr)
         return fisher_vectors
+
+    def __cluster_by_frame(self, sequence, Frames):
+        kernels = []
+        lr_sequence = self.likelihood_ratios[sequence]
+        for frame in Frames:
+            max = 0
+            for kernel in range(0, self.n_kernels):
+                if lr_sequence[frame, 0, kernel] > max:
+                    max = lr_sequence[frame, 0, kernel]
+                    k = kernel
+            kernels.append(k)
+        return kernels
+
+    def __extract_frames_in_cluster(self, n_kernel):
+        sequences = []
+        for sequence in self.likelihood_ratios:
+            frame_in_custer = []
+            for n_frame in range(0, sequence.shape[0]):
+                max = 0
+                for kernel in range(0, self.n_kernels):
+                    if (sequence[n_frame, 0, kernel] > max):
+                        max = sequence[n_frame, 0, kernel]
+                        index = kernel
+                if index == n_kernel:
+                    frame_in_custer.append(n_frame)
+            sequences.append(frame_in_custer)
+        return sequences
+
+    def __test_kernel_frames(self, sequence, Frames):
+        # Seleziono la sequenza 11 con VAS elevato = 8 ed estraggo in quali kernels vengono associati i frame 199..
+        kernels = self.__cluster_by_frame(sequence, Frames)
+        # Visualizzo quali altri frames di altre sequenze sono associati ai kernels precedentemente estratti
+        for kernel in kernels:
+            sequences_frames_in_kernel = self.__extract_frames_in_cluster(kernel)
 
     def __generate_histograms(self):
         """
@@ -167,22 +193,12 @@ class PreliminaryClustering:
         for video_fv in self.fisher_vectors:
             current_video_fv = video_fv[0]
             video_histogram = np.zeros(self.n_kernels)
-            centroid_clusters_frame = np.zeros(self.n_kernels)
-            max = np.zeros(self.n_kernels)
-            frame_number = 0
             for frame in current_video_fv:
                 for index_configuration in range(0, self.n_kernels):
                     video_histogram[index_configuration] += sum(frame[index_configuration]) + \
                                                             sum(frame[index_configuration + self.n_kernels])
-                    if sum(frame[index_configuration]) + sum(frame[index_configuration + self.n_kernels]) > \
-                            max[index_configuration]:
-                        max[index_configuration] = sum(frame[index_configuration]) + sum(
-                            frame[index_configuration + self.n_kernels])
-                        centroid_clusters_frame[index_configuration] = frame_number
-                frame_number += 1
             video_histogram = video_histogram / sum(video_histogram)
             histograms_of_videos.append(video_histogram)
-            self.centroids_frame_of_sequence.append(centroid_clusters_frame)
         return histograms_of_videos
 
     def __extract_relevant_and_neutral_configurations(self):
@@ -210,20 +226,6 @@ class PreliminaryClustering:
                         index_neutral_configurations.append(j)
         index_relevant_configurations = [x for x in np.arange(self.n_kernels) if x not in index_neutral_configurations]
         return index_relevant_configurations, index_neutral_configurations
-
-    def __test_centroid_cluster_frame_velocity(self):
-        index_relevant = self.index_relevant_configurations
-        velocities = self.__get_velocities_frames()
-        sequence_num = 0
-        cluster_velocity = np.zeros((len(velocities), self.n_kernels))
-        for sequence in velocities:
-            for index in index_relevant:
-                frame = int(self.centroids_frame_of_sequence[sequence_num][index])
-                vel_lndk = sum(sequence[frame, :]) / len(self.selected_lndks_idx)
-                cluster_velocity[sequence_num, index] = vel_lndk
-            sequence_num += 1
-        df = pd.DataFrame(cluster_velocity).T
-        df.to_excel(excel_writer="./cluster_velocity.xlsx")
 
     def __plot_and_save_histograms(self, histo_figures_path):
         """
@@ -256,10 +258,10 @@ class PreliminaryClustering:
         train_frames_features = self.__prepare_training_features(velocities_scaled)
         self.gmm = self.__generate_gmm(train_frames_features)
         self.fisher_vectors = self.__calculate_FV(velocities_scaled)
+        self.__test_kernel_frames(11, [199, 200, 201, 202])
         self.histograms_of_videos = self.__generate_histograms()
         self.index_relevant_configurations, self.index_neutral_configurations = \
             self.__extract_relevant_and_neutral_configurations()
-        self.__test_centroid_cluster_frame_velocity()
         if histo_figures_path is not None:
             self.__plot_and_save_histograms(histo_figures_path)
         if preliminary_clustering_dump_path is not None:
