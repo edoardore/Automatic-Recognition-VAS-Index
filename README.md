@@ -29,7 +29,7 @@ L'aggiunta delle modifiche in __get_velocity_frames() degrada sfortunatamente le
 ```python         
 self.__test_kernel_frames(11, [199, 200, 201, 202])
 ```
-estrae i kernel di appartenenza dei frames della sequenza 11 nella lista e mostra successivamente per ogni cluster quali altri frames, anche di altre sequenze vi appartengono. 
+estrae i kernel di appartenenza dei frames nella lista della sequenza 11 e mostra successivamente per ogni cluster quali altri frames, anche di altre sequenze vi appartengono. 
  
 # Original Code by: [Alessandro Arezzo](https://github.com/AlessandroArezzo/Automatic-Recognition-VAS-Index) (2021)
 
