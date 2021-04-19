@@ -258,7 +258,7 @@ class PreliminaryClustering:
         train_frames_features = self.__prepare_training_features(velocities_scaled)
         self.gmm = self.__generate_gmm(train_frames_features)
         self.fisher_vectors = self.__calculate_FV(velocities_scaled)
-        self.__test_kernel_frames(11, [199, 200, 201, 202])
+        self.__test_kernel_frames(1, [200, 226, 253])
         self.histograms_of_videos = self.__generate_histograms()
         self.index_relevant_configurations, self.index_neutral_configurations = \
             self.__extract_relevant_and_neutral_configurations()
