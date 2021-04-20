@@ -20,7 +20,10 @@ num_lndks = 66
 weighted_samples = config.weighted_samples
 # Features info
 selected_lndks_idx = config.selected_lndks_idx
-num_videos = 30
+seq_df = pd.read_csv(seq_df_path)
+seq_df = seq_df.query('VAS>=' + str(config.threshold_VAS))
+index = seq_df.index.tolist()
+num_videos = len(index)
 cross_val_protocol = config.cross_val_protocol
 train_video_idx, test_video_idx = get_training_and_test_idx(num_videos, cross_val_protocol, seq_df_path)
 # Preliminary clustering info and paths

@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import seaborn as sn
 import pandas as pd
 from sklearn import manifold
+from configuration import config
+
 
 
 def check_existing_paths(dir_paths=[], file_paths=[]):
@@ -20,6 +22,7 @@ def check_existing_paths(dir_paths=[], file_paths=[]):
 
 def get_subjects_seq_idx(seq_df_path):
     seq_df = pd.read_csv(seq_df_path)
+    seq_df = seq_df.query('VAS>=' + str(config.threshold_VAS))
     subjects_idxs = {}
     subject_count = 0
     seq_name = ""

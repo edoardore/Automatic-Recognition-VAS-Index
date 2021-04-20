@@ -5,7 +5,8 @@ from fishervector import FisherVectorGMM
 from sklearn.preprocessing import RobustScaler
 import matplotlib.pyplot as plt
 import matplotlib
-from FisherV import FisherVectorV
+
+import configuration.config
 
 matplotlib.use('Agg')
 
@@ -30,7 +31,17 @@ class PreliminaryClustering:
         self.histograms_of_videos = None  # histograms of all sequences contained in dataset
         self.index_relevant_configurations = None  # indexes of the clusters to considered as relevant
         self.index_neutral_configurations = None  # indexes of the clusters to considered as neutral (not to use for VAS classification)
-        self.likelihood_ratios = []
+
+    def __get_dataset(self, coord_df, seq_df):
+        """
+        Return DataFrames of dataset with only element with VAS >= of threshold_VAS
+        """
+        if self.verbose:
+            print("---- Get data only with VAS >= " + str(configuration.config.threshold_VAS) + " ----")
+        seq_df = seq_df.query('VAS>=' + str(configuration.config.threshold_VAS))
+        index = seq_df.index.tolist()
+        coord_df = coord_df[coord_df['0'].isin(index)]
+        return coord_df, seq_df
 
     def __get_velocities_frames(self):
         """
@@ -42,8 +53,10 @@ class PreliminaryClustering:
             print("---- Calculating velocities of the frames in dataset... ----")
         coord_df = pd.read_csv(self.coord_df_path)
         seq_df = pd.read_csv(self.seq_df_path)
+        coord_df, seq_df = self.__get_dataset(coord_df, seq_df)
         velocities = []
-        for seq_num in np.arange(seq_df.shape[0]):
+        seq_idx = seq_df.index.tolist()
+        for seq_num in seq_idx:
             lndks = coord_df.loc[coord_df['0'] == seq_num].values
             lndks = lndks[:, 2:]
             nose_tip_x = lndks[:, 30]
@@ -139,46 +152,8 @@ class PreliminaryClustering:
         fisher_vectors = []
         for feature in velocities:
             fv = self.gmm.predict(np.array(feature).reshape(1, feature.shape[0], 1, n_features_for_frame))
-            lr = FisherVectorV.compute_likelihood_ratio(self.gmm,
-                                                        np.array(feature).reshape(1, feature.shape[0], 1,
-                                                                                  n_features_for_frame))
             fisher_vectors.append(fv)
-            self.likelihood_ratios.append(lr)
         return fisher_vectors
-
-    def __cluster_by_frame(self, sequence, Frames):
-        kernels = []
-        lr_sequence = self.likelihood_ratios[sequence]
-        for frame in Frames:
-            max = 0
-            for kernel in range(0, self.n_kernels):
-                if lr_sequence[frame, 0, kernel] > max:
-                    max = lr_sequence[frame, 0, kernel]
-                    k = kernel
-            kernels.append(k)
-        return kernels
-
-    def __extract_frames_in_cluster(self, n_kernel):
-        sequences = []
-        for sequence in self.likelihood_ratios:
-            frame_in_custer = []
-            for n_frame in range(0, sequence.shape[0]):
-                max = 0
-                for kernel in range(0, self.n_kernels):
-                    if (sequence[n_frame, 0, kernel] > max):
-                        max = sequence[n_frame, 0, kernel]
-                        index = kernel
-                if index == n_kernel:
-                    frame_in_custer.append(n_frame)
-            sequences.append(frame_in_custer)
-        return sequences
-
-    def __test_kernel_frames(self, sequence, Frames):
-        # Seleziono la sequenza 11 con VAS elevato = 8 ed estraggo in quali kernels vengono associati i frame 199..
-        kernels = self.__cluster_by_frame(sequence, Frames)
-        # Visualizzo quali altri frames di altre sequenze sono associati ai kernels precedentemente estratti
-        for kernel in kernels:
-            sequences_frames_in_kernel = self.__extract_frames_in_cluster(kernel)
 
     def __generate_histograms(self):
         """
@@ -258,7 +233,6 @@ class PreliminaryClustering:
         train_frames_features = self.__prepare_training_features(velocities_scaled)
         self.gmm = self.__generate_gmm(train_frames_features)
         self.fisher_vectors = self.__calculate_FV(velocities_scaled)
-        self.__test_kernel_frames(1, [200, 226, 253])
         self.histograms_of_videos = self.__generate_histograms()
         self.index_relevant_configurations, self.index_neutral_configurations = \
             self.__extract_relevant_and_neutral_configurations()
