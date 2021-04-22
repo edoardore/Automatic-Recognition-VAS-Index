@@ -8,7 +8,6 @@ from sklearn import manifold
 from configuration import config
 
 
-
 def check_existing_paths(dir_paths=[], file_paths=[]):
     project_path = os.getcwd() + "/"
     for dir_path in dir_paths:
@@ -22,7 +21,6 @@ def check_existing_paths(dir_paths=[], file_paths=[]):
 
 def get_subjects_seq_idx(seq_df_path):
     seq_df = pd.read_csv(seq_df_path)
-    seq_df = seq_df.query('VAS>=' + str(config.threshold_VAS))
     subjects_idxs = {}
     subject_count = 0
     seq_name = ""
@@ -62,6 +60,23 @@ def get_training_and_test_idx(num_videos, cross_val_protocol, seq_df_path):
             all_test_idx.append(np.asarray([video_idx]))
             all_training_idx.append(np.delete(np.arange(0, num_videos), video_idx))
 
+    index = pd.read_csv(seq_df_path).query('VAS>=' + str(config.threshold_VAS)).index.tolist()
+    idxs = []
+    for idx in all_training_idx:
+        video_idx = []
+        for i in idx:
+            if i in index:
+                video_idx.append(i)
+        idxs.append(video_idx)
+    all_training_idx = idxs
+    idxs = []
+    for idx in all_test_idx:
+        video_idx = []
+        for i in idx:
+            if i in index:
+                video_idx.append(i)
+        idxs.append(video_idx)
+    all_test_idx = idxs
     return all_training_idx, all_test_idx
 
 

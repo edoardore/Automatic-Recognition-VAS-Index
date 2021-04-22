@@ -6,7 +6,6 @@ from sklearn.preprocessing import RobustScaler
 import matplotlib.pyplot as plt
 import matplotlib
 
-import configuration.config
 
 matplotlib.use('Agg')
 
@@ -32,17 +31,6 @@ class PreliminaryClustering:
         self.index_relevant_configurations = None  # indexes of the clusters to considered as relevant
         self.index_neutral_configurations = None  # indexes of the clusters to considered as neutral (not to use for VAS classification)
 
-    def __get_dataset(self, coord_df, seq_df):
-        """
-        Return DataFrames of dataset with only element with VAS >= of threshold_VAS
-        """
-        if self.verbose:
-            print("---- Get data only with VAS >= " + str(configuration.config.threshold_VAS) + " ----")
-        seq_df = seq_df.query('VAS>=' + str(configuration.config.threshold_VAS))
-        index = seq_df.index.tolist()
-        coord_df = coord_df[coord_df['0'].isin(index)]
-        return coord_df, seq_df
-
     def __get_velocities_frames(self):
         """
         Extract velocities of landmarks video sequences in dataset.
@@ -53,10 +41,8 @@ class PreliminaryClustering:
             print("---- Calculating velocities of the frames in dataset... ----")
         coord_df = pd.read_csv(self.coord_df_path)
         seq_df = pd.read_csv(self.seq_df_path)
-        coord_df, seq_df = self.__get_dataset(coord_df, seq_df)
         velocities = []
-        seq_idx = seq_df.index.tolist()
-        for seq_num in seq_idx:
+        for seq_num in np.arange(seq_df.shape[0]):
             lndks = coord_df.loc[coord_df['0'] == seq_num].values
             lndks = lndks[:, 2:]
             nose_tip_x = lndks[:, 30]
