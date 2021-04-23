@@ -32,11 +32,8 @@ self.__test_kernel_frames(11, [199, 200, 201, 202])
 estrae i kernel di appartenenza dei frames nella lista della sequenza 11 e mostra successivamente per ogni cluster quali altri frames, anche di altre sequenze vi appartengono. 
 
 # Modifiche Realizzate 3:
-* Aggiunta di:
-```python
-    def __get_dataset(self, coord_df, seq_df)
-```
-* Si effettua il clustering solamente su elementi del dataset con VAS >= ad una soglia presente in config.py
+* Si effettua il clustering solamente su elementi del dataset con VAS >= della soglia presente in config.py
+
  
 # Original Code by: [Alessandro Arezzo](https://github.com/AlessandroArezzo/Automatic-Recognition-VAS-Index) (2021)
 
