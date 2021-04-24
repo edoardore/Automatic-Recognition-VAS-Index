@@ -36,7 +36,7 @@ threshold_neutral = 0.3
  with a frequency greater than 0.3 will be considered neutral. """
 
 # Threshold of VAS for data in dataset
-threshold_VAS = 7
+threshold_VAS = 8
 """ For example if the threshold is 8: the preliminary clustering use only the data with VAS >= 8 """
 
 # Defines if the histograms of the dataset sequences must be saved in their respective files

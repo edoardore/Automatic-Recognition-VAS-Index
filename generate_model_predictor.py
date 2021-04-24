@@ -23,6 +23,15 @@ selected_lndks_idx = config.selected_lndks_idx
 num_videos = 200
 cross_val_protocol = config.cross_val_protocol
 train_video_idx, test_video_idx = get_training_and_test_idx(num_videos, cross_val_protocol, seq_df_path)
+index = pd.read_csv(seq_df_path).query('VAS>=' + str(config.threshold_VAS)).index.tolist()
+idxs = []
+for idx in train_video_idx:
+    video_idx = []
+    for i in idx:
+        if i in index:
+            video_idx.append(i)
+    idxs.append(video_idx)
+clustering_train_video_idx = idxs
 # Preliminary clustering info and paths
 n_kernels_GMM = config.n_kernels_GMM
 threshold_neutral = config.threshold_neutral
@@ -71,6 +80,7 @@ if __name__ == '__main__':
         print("- Round " + str(test_idx + 1) + "/" + str(n_test) + " -")
         test_videos = test_video_idx[test_idx]
         train_videos = train_video_idx[test_idx]
+        clustering_train_videos = clustering_train_video_idx[test_idx]
         path_histo_current = None
         if fit_by_bic:
             print("-- Execute preliminary clustering fitting GMM by BIC... --")
@@ -79,7 +89,7 @@ if __name__ == '__main__':
         preliminary_clustering = PreliminaryClustering(coord_df_path=coord_df_path,
                                                        seq_df_path=seq_df_path, num_lndks=num_lndks,
                                                        selected_lndks_idx=selected_lndks_idx,
-                                                       train_video_idx=train_videos,
+                                                       train_video_idx=clustering_train_videos,
                                                        n_kernels=n_kernels_GMM,
                                                        covariance_type=covariance_type,
                                                        threshold_neutral=threshold_neutral,
