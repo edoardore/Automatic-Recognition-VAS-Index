@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import seaborn as sn
 import pandas as pd
 from sklearn import manifold
-from configuration import config
 
 
 def check_existing_paths(dir_paths=[], file_paths=[]):

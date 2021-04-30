@@ -16,10 +16,11 @@ covariance_type = "full"
 
 # Indexes of the landmarks to use for fitting GMM and description sequences
 # Occhi + sopracciglia
-selected_lndks_idx = [17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]
+#selected_lndks_idx = [17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]
 # added number 30, nose tip landmark
 # selected_lndks_idx = [5, 11, 19, 24, 30, 37, 41, 44, 46, 50, 52, 56, 58]
 # selected_lndks_idx = np.arange(66)
+selected_lndks_idx = [5, 11, 19, 24, 37, 41, 44, 46, 50, 52, 56, 58]
 
 n_jobs = 2  # Number of threads to use to perform SVR training
 
@@ -36,7 +37,7 @@ threshold_neutral = 0.3
  with a frequency greater than 0.3 will be considered neutral. """
 
 # Threshold of VAS for data in dataset
-threshold_VAS = 8
+threshold_VAS = 0
 """ For example if the threshold is 8: the preliminary clustering use only the data with VAS >= 8 """
 
 # Defines if the histograms of the dataset sequences must be saved in their respective files
