@@ -36,6 +36,8 @@ estrae i kernel di appartenenza dei frames nella lista della sequenza 11 e mostr
 
 # Modifiche Realizzate 4:
 * Aggiunto vel_plot.py che riceve in ingresso il nome di una sequenza ed un elenco dei landmarks di interesse, produce un grafico a barre con il numero di frame nell'asse X e sull'asse Y la somma dei moduli della velocità dei landmarks di interesse. Le velocità dei landmarks si misurano rispetto al baricentro del volto e alla punta del naso si associa la velocità del baricentro. 
+![modifiche4](https://github.com/edoardore/Automatic-Recognition-VAS-Index/blob/master/Schermata%20da%202021-04-30%2012-03-04.png)
+
  
 # Original Code by: [Alessandro Arezzo](https://github.com/AlessandroArezzo/Automatic-Recognition-VAS-Index) (2021)
 
