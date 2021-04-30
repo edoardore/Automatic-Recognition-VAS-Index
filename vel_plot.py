@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-selected_lndks_idx = [1, 2, 30]
-seq_name = "ak064t1afaff"
+selected_lndks_idx = range(0,66)
+seq_name = "ak064t1aiaff"
 
 
 def get_velocities_plot(seq_name, sequence_lndks_idx):
@@ -43,6 +43,8 @@ def get_velocities_plot(seq_name, sequence_lndks_idx):
 
     plt.bar(range(0, len(data_velocities)), data_velocities, color="blue")
     plt.title("Sequence: " + seq_name + " VAS: " + str(VAS) + " Frame numbers: " + str(num_frames))
+    plt.xlabel("Frame Num")
+    plt.ylabel("Sum Vel Selected Lndk")
     plt.show()
 
 
