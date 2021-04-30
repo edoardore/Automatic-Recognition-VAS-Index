@@ -34,6 +34,8 @@ estrae i kernel di appartenenza dei frames nella lista della sequenza 11 e mostr
 # Modifiche Realizzate 3:
 * Si effettua il clustering solamente su elementi del dataset con VAS >= della soglia presente in config.py
 
+# Modifiche Realizzate 4:
+* Aggiunto vel_plot.py che riceve in ingresso il nome di una sequenza ed un elenco dei landmarks di interesse, produce un grafico a barre con il numero di frame nell'asse X e sull'asse Y la somma dei moduli della velocità dei landmarks di interesse. Le velocità dei landmarks si misurano rispetto al baricentro del volto e alla punta del naso si associa la velocità del baricentro. 
  
 # Original Code by: [Alessandro Arezzo](https://github.com/AlessandroArezzo/Automatic-Recognition-VAS-Index) (2021)
 
