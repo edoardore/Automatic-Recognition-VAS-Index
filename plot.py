@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 
-seq_name = "ak064t1aiaff"
+seq_name = "bn080t1aeunaff"
 
 # Original Arezzo, senza 30
 # selected_lndks_idx = [5, 11, 19, 24, 30, 37, 41, 44, 46, 50, 52, 56, 58]

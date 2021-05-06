@@ -5,7 +5,7 @@ from fishervector import FisherVectorGMM
 from sklearn.preprocessing import RobustScaler
 import matplotlib.pyplot as plt
 import matplotlib
-
+from configuration import config
 
 matplotlib.use('Agg')
 
@@ -42,24 +42,39 @@ class PreliminaryClustering:
         coord_df = pd.read_csv(self.coord_df_path)
         seq_df = pd.read_csv(self.seq_df_path)
         velocities = []
+        positions_x = []
+        positions_y = []
         for seq_num in np.arange(seq_df.shape[0]):
             lndks = coord_df.loc[coord_df['0'] == seq_num].values
             lndks = lndks[:, 2:]
-            nose_tip_x = lndks[:, 30]
-            nose_tip_y = lndks[:, 30 + self.num_lndks]
-            offset = np.hstack((np.repeat(nose_tip_x.reshape(-1, 1), self.num_lndks, axis=1),
-                                np.repeat(nose_tip_y.reshape(-1, 1), self.num_lndks, axis=1)))
+            num_lndks = 66
+            num_frames = seq_df['num_frames'][seq_num]
+            centroid_x = np.array([np.sum(lndks[i, 0:num_lndks]) / num_lndks for i in range(num_frames)])
+            centroid_y = np.array([np.sum(lndks[i, num_lndks:]) / num_lndks for i in range(num_frames)])
+
+            offset = np.hstack((np.repeat(centroid_x.reshape(-1, 1), num_lndks, axis=1),
+                                np.repeat(centroid_y.reshape(-1, 1), num_lndks, axis=1)))
+
             lndks_centered = lndks - offset
-            lndk_vel = np.power(np.power(lndks_centered[0:lndks_centered.shape[0] - 1, 0:self.num_lndks] -
-                                         lndks_centered[1:lndks_centered.shape[0], 0:self.num_lndks], 2) +
-                                np.power(lndks_centered[0:lndks_centered.shape[0] - 1, self.num_lndks:] -
-                                         lndks_centered[1:lndks_centered.shape[0], self.num_lndks:], 2),
-                                0.5)
+            lndks_centered[:, 30] = centroid_x
+            lndks_centered[:, 30 + num_lndks] = centroid_y
+            lndk_vel = np.power(np.power(lndks_centered[0:lndks_centered.shape[0] - 1, 0:num_lndks] -
+                                         lndks_centered[1:lndks_centered.shape[0], 0:num_lndks], 2) +
+                                np.power(lndks_centered[0:lndks_centered.shape[0] - 1, num_lndks:] -
+                                         lndks_centered[1:lndks_centered.shape[0], num_lndks:], 2), 0.5)
             data_velocities = []
             for k in np.arange(1, lndk_vel.shape[0]):
                 data_velocities.append(np.array(lndk_vel[k, self.selected_lndks_idx]))
             velocities.append(np.array(data_velocities))
-        return velocities
+            data_pos_x = []
+            for k in np.arange(1, lndk_vel.shape[0]):
+                data_pos_x.append(np.array(lndks_centered[k, self.selected_lndks_idx]))
+            positions_x.append(np.array(data_pos_x))
+            data_pos_y = []
+            for k in np.arange(1, lndk_vel.shape[0]):
+                data_pos_y.append(np.array(lndks_centered[k, self.selected_lndks_idx]))
+            positions_y.append(np.array(data_pos_y))
+        return velocities, positions_x, positions_y
 
     def __scale_features(self, velocities):
         """
@@ -81,7 +96,44 @@ class PreliminaryClustering:
                 feat_count += 1
         return velocities
 
-    def __prepare_training_features(self, velocities):
+    def __get_relevant_frame(self):
+        """
+        Returns the index of relevant frame for each training sequence
+        """
+        coord_df = pd.read_csv(self.coord_df_path)
+        seq_df = pd.read_csv(self.seq_df_path)
+        total_index = []
+        for seq_idx in self.train_video_idx:
+            num_frames = seq_df['num_frames'][seq_idx]
+            lndks = coord_df.loc[coord_df['0'] == seq_idx].values
+            num_lndks = 66
+            lndks = lndks[:, 2:]
+
+            centroid_x = np.array([np.sum(lndks[i, 0:num_lndks]) / num_lndks for i in range(num_frames)])
+            centroid_y = np.array([np.sum(lndks[i, num_lndks:]) / num_lndks for i in range(num_frames)])
+
+            offset = np.hstack((np.repeat(centroid_x.reshape(-1, 1), num_lndks, axis=1),
+                                np.repeat(centroid_y.reshape(-1, 1), num_lndks, axis=1)))
+
+            lndks_centered = lndks - offset
+            lndks_centered[:, 30] = centroid_x
+            lndks_centered[:, 30 + num_lndks] = centroid_y
+            lndk_vel = np.power(np.power(lndks_centered[0:lndks_centered.shape[0] - 1, 0:num_lndks] -
+                                         lndks_centered[1:lndks_centered.shape[0], 0:num_lndks], 2) +
+                                np.power(lndks_centered[0:lndks_centered.shape[0] - 1, num_lndks:] -
+                                         lndks_centered[1:lndks_centered.shape[0], num_lndks:], 2), 0.5)
+            data_velocities = []
+            for k in np.arange(1, lndk_vel.shape[0]):
+                data_velocities.append(sum(lndk_vel[k, self.selected_lndks_idx]))
+            data_velocities_filtered = np.convolve(data_velocities, np.ones(3) / 3, mode='valid')
+            index = []
+            for count, vel in enumerate(data_velocities_filtered):
+                if vel > config.vel_frame_threshold:
+                    index.append(count)
+            total_index.append(index)
+        return total_index
+
+    def __prepare_training_features(self, velocities, positions_x, positions_y):
         """
         Prepare features for GMM training.
         All velocities of the sequences frame are inserted in a 4D array that contains all frames informations.
@@ -91,16 +143,22 @@ class PreliminaryClustering:
 
         if self.verbose:
             print("---- Preparing features vector of the frame in the training set by velocities... ----")
-        train_velocities = [velocities[i] for i in self.train_video_idx]
-        train_num_frames = sum([video.shape[0] for video in train_velocities])
+        relevant_frames = self.__get_relevant_frame()
+        train_num_frames = sum([len(relevant_frames[count]) for count, video in enumerate(relevant_frames)])
         n_features_for_frame = len(self.selected_lndks_idx)
-        train_frames_features = np.ndarray(shape=(1, train_num_frames, 1, n_features_for_frame))
+        train_frames_features = np.ndarray(shape=(1, train_num_frames, 3, n_features_for_frame))
         index_frame = 0
-        for video_idx in self.train_video_idx:
+        for vid_num, video_idx in enumerate(self.train_video_idx):
             video = velocities[video_idx]
-            for frame_idx in np.arange(video.shape[0]):
+            vidx = positions_x[video_idx]
+            vidy = positions_y[video_idx]
+            for frame_idx in relevant_frames[vid_num]:
                 current_frame_features = video[frame_idx]
+                current_frame_pos_x = vidx[frame_idx]
+                current_frame_pos_y = vidy[frame_idx]
                 train_frames_features[0][index_frame][0][:] = current_frame_features[:]
+                train_frames_features[0][index_frame][1][:] = current_frame_pos_x[:]
+                train_frames_features[0][index_frame][2][:] = current_frame_pos_y[:]
                 index_frame += 1
         return train_frames_features
 
@@ -214,9 +272,9 @@ class PreliminaryClustering:
         If plot_and_save_histo is setted on True value the figures of histograms of videos is saved in files
         """
 
-        velocities = self.__get_velocities_frames()
+        velocities, positions_x, positions_y = self.__get_velocities_frames()
         velocities_scaled = self.__scale_features(velocities)
-        train_frames_features = self.__prepare_training_features(velocities_scaled)
+        train_frames_features = self.__prepare_training_features(velocities_scaled, positions_x, positions_y)
         self.gmm = self.__generate_gmm(train_frames_features)
         self.fisher_vectors = self.__calculate_FV(velocities_scaled)
         self.histograms_of_videos = self.__generate_histograms()
