@@ -38,6 +38,13 @@ estrae i kernel di appartenenza dei frames nella lista della sequenza 11 e mostr
 * Aggiunto vel_plot.py che riceve in ingresso il nome di una sequenza ed un elenco dei landmarks di interesse, produce un grafico a barre con il numero di frame nell'asse X e sull'asse Y la somma dei moduli della velocità dei landmarks di interesse. Le velocità dei landmarks si misurano rispetto al baricentro del volto e alla punta del naso si associa la velocità del baricentro. 
 ![modifiche4](https://github.com/edoardore/Automatic-Recognition-VAS-Index/blob/master/Schermata%20da%202021-04-30%2012-03-04.png)
 
+# Modifiche Realizzate 5:
+* Aggiunta sogliatura dei frame per cui si effettua il training nel clustering preliminare. Il metodo __get_relevant_frame(self) permette di estrarre i frame rilevanti andando a sogliare il grafico realizzato in modifiche 4 dopo un processo di smoothing con moving average. Al posto di calcolare le velocità rispetto alla punta del naso si calcolano rispetto al baricentro dei landmarks e si aggiunge alla punta del naso la velocità del baricentro stesso.
+* Attualmente la versione con performance migliori ha i seguenti parametri:
+* 32 kernels, threshold_VAS>=9, threshold_vel_frames>6, Landmarks come in Arezzo + 30 (nose tip)
+ 
+ # Modifiche Realizzate 6:
+ * Concatenato al vettore velocità anche il vettore posizione dei landmark di interesse. Nel clustering preliminare si calcola la GMM con l'aggiunta delle coordinate x ed y per i frames delle sequenze di interesse. I risultati mostrano un peggioramento, la versione migliore rimane attualmente la numero 5.
  
 # Original Code by: [Alessandro Arezzo](https://github.com/AlessandroArezzo/Automatic-Recognition-VAS-Index) (2021)
 
