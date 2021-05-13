@@ -5,7 +5,7 @@ from fishervector import FisherVectorGMM
 from sklearn.preprocessing import RobustScaler
 import matplotlib.pyplot as plt
 import matplotlib
-from configuration import config
+import operator
 
 matplotlib.use('Agg')
 
@@ -13,13 +13,15 @@ matplotlib.use('Agg')
 class PreliminaryClustering:
     """Class that is responsible for obtaining the relevant configurations for the classification of the VAS index. """
 
-    def __init__(self, coord_df_path, seq_df_path, num_lndks, selected_lndks_idx, train_video_idx, n_kernels,
-                 threshold_neutral, covariance_type='diag', verbose=True, fit_by_bic=False):
+    def __init__(self, coord_df_path, seq_df_path, num_lndks, selected_lndks_idx, description, vel_frame_window,
+                 train_video_idx, n_kernels, threshold_neutral, covariance_type='diag', verbose=True, fit_by_bic=False):
         self.coord_df_path = coord_df_path  # Path of csv file contained coordinates of the landmarks
         self.seq_df_path = seq_df_path  # Path of csv file contained sequences informations
         self.num_lndks = num_lndks  # Number of landmarks for each frame of the videos in the dataset
         self.selected_lndks_idx = selected_lndks_idx  # Indexes of the landmarks to considered to the clustering
         self.train_video_idx = train_video_idx  # Indexes of the videos to use for training
+        self.description = description  # indicate pos, vel, pos+vel extracted from each frame
+        self.vel_frame_window = vel_frame_window  # the lenght of max frame vel in a sequence
         self.fit_by_bic = fit_by_bic  # Define if the GMM must be fitted using fit by bic
         self.threshold_neutral = threshold_neutral  # Thresholds to use fo extraction of the neutral configurations
         self.n_kernels = n_kernels  # Number of kernels of the gmm to trained
@@ -42,8 +44,6 @@ class PreliminaryClustering:
         coord_df = pd.read_csv(self.coord_df_path)
         seq_df = pd.read_csv(self.seq_df_path)
         velocities = []
-        positions_x = []
-        positions_y = []
         for seq_num in np.arange(seq_df.shape[0]):
             lndks = coord_df.loc[coord_df['0'] == seq_num].values
             lndks = lndks[:, 2:]
@@ -66,15 +66,43 @@ class PreliminaryClustering:
             for k in np.arange(1, lndk_vel.shape[0]):
                 data_velocities.append(np.array(lndk_vel[k, self.selected_lndks_idx]))
             velocities.append(np.array(data_velocities))
+        return velocities
+
+    def __get_positions_frames(self):
+        """
+        Extract positions of landmarks video sequences in dataset.
+        Return two lists of 2D array with positions of the landmarks for each frame
+        """
+
+        if self.verbose:
+            print("---- Calculating positions of the frames in dataset... ----")
+        coord_df = pd.read_csv(self.coord_df_path)
+        seq_df = pd.read_csv(self.seq_df_path)
+        positions_x = []
+        positions_y = []
+        for seq_num in np.arange(seq_df.shape[0]):
+            lndks = coord_df.loc[coord_df['0'] == seq_num].values
+            lndks = lndks[:, 2:]
+            num_lndks = 66
+            num_frames = seq_df['num_frames'][seq_num]
+            centroid_x = np.array([np.sum(lndks[i, 0:num_lndks]) / num_lndks for i in range(num_frames)])
+            centroid_y = np.array([np.sum(lndks[i, num_lndks:]) / num_lndks for i in range(num_frames)])
+
+            offset = np.hstack((np.repeat(centroid_x.reshape(-1, 1), num_lndks, axis=1),
+                                np.repeat(centroid_y.reshape(-1, 1), num_lndks, axis=1)))
+
+            lndks_centered = lndks - offset
+            lndks_centered[:, 30] = centroid_x
+            lndks_centered[:, 30 + num_lndks] = centroid_y
             data_pos_x = []
-            for k in np.arange(1, lndk_vel.shape[0]):
+            for k in np.arange(1, lndks_centered.shape[0]):
                 data_pos_x.append(np.array(lndks_centered[k, self.selected_lndks_idx]))
             positions_x.append(np.array(data_pos_x))
             data_pos_y = []
-            for k in np.arange(1, lndk_vel.shape[0]):
+            for k in np.arange(1, lndks_centered.shape[0]):
                 data_pos_y.append(np.array(lndks_centered[k, self.selected_lndks_idx]))
             positions_y.append(np.array(data_pos_y))
-        return velocities, positions_x, positions_y
+        return positions_x, positions_y
 
     def __scale_features(self, velocities):
         """
@@ -98,7 +126,7 @@ class PreliminaryClustering:
 
     def __get_relevant_frame(self):
         """
-        Returns the index of relevant frame for each training sequence
+        Returns a window of index of relevant frame for each training sequence, centered on the frame with max vel
         """
         coord_df = pd.read_csv(self.coord_df_path)
         seq_df = pd.read_csv(self.seq_df_path)
@@ -126,10 +154,11 @@ class PreliminaryClustering:
             for k in np.arange(1, lndk_vel.shape[0]):
                 data_velocities.append(sum(lndk_vel[k, self.selected_lndks_idx]))
             data_velocities_filtered = np.convolve(data_velocities, np.ones(3) / 3, mode='valid')
-            index = []
-            for count, vel in enumerate(data_velocities_filtered):
-                if vel > config.vel_frame_threshold:
-                    index.append(count)
+            if self.vel_frame_window > 0:
+                max_index, value = max(enumerate(data_velocities_filtered), key=operator.itemgetter(1))
+                index=[*range(max_index-int(self.vel_frame_window/2),max_index+int(self.vel_frame_window/2),1)]
+            else:
+                index=[*range(0, lndk_vel.shape[0]-1)]
             total_index.append(index)
         return total_index
 
@@ -146,7 +175,12 @@ class PreliminaryClustering:
         relevant_frames = self.__get_relevant_frame()
         train_num_frames = sum([len(relevant_frames[count]) for count, video in enumerate(relevant_frames)])
         n_features_for_frame = len(self.selected_lndks_idx)
-        train_frames_features = np.ndarray(shape=(1, train_num_frames, 3, n_features_for_frame))
+        if 'pos' in self.description and 'vel' not in self.description:
+            train_frames_features = np.ndarray(shape=(1, train_num_frames, 3, n_features_for_frame))
+        if 'pos' not in self.description and 'vel' in self.description:
+            train_frames_features = np.ndarray(shape=(1, train_num_frames, 1, n_features_for_frame))
+        if 'pos' in self.description and 'vel' in self.description:
+            train_frames_features = np.ndarray(shape=(1, train_num_frames, 3, n_features_for_frame))
         index_frame = 0
         for vid_num, video_idx in enumerate(self.train_video_idx):
             video = velocities[video_idx]
@@ -156,9 +190,15 @@ class PreliminaryClustering:
                 current_frame_features = video[frame_idx]
                 current_frame_pos_x = vidx[frame_idx]
                 current_frame_pos_y = vidy[frame_idx]
-                train_frames_features[0][index_frame][0][:] = current_frame_features[:]
-                train_frames_features[0][index_frame][1][:] = current_frame_pos_x[:]
-                train_frames_features[0][index_frame][2][:] = current_frame_pos_y[:]
+                if 'pos' in self.description and 'vel' not in self.description:
+                    train_frames_features[0][index_frame][0][:] = current_frame_pos_x[:]
+                    train_frames_features[0][index_frame][1][:] = current_frame_pos_y[:]
+                if 'pos' not in self.description and 'vel' in self.description:
+                    train_frames_features[0][index_frame][0][:] = current_frame_features[:]
+                if 'pos' in self.description and 'vel' in self.description:
+                    train_frames_features[0][index_frame][0][:] = current_frame_features[:]
+                    train_frames_features[0][index_frame][1][:] = current_frame_pos_x[:]
+                    train_frames_features[0][index_frame][2][:] = current_frame_pos_y[:]
                 index_frame += 1
         return train_frames_features
 
@@ -271,9 +311,9 @@ class PreliminaryClustering:
         Execute preliminary clustering using the parameters passed to class constructor.
         If plot_and_save_histo is setted on True value the figures of histograms of videos is saved in files
         """
-
-        velocities, positions_x, positions_y = self.__get_velocities_frames()
+        velocities = self.__get_velocities_frames()
         velocities_scaled = self.__scale_features(velocities)
+        positions_x, positions_y = self.__get_positions_frames()
         train_frames_features = self.__prepare_training_features(velocities_scaled, positions_x, positions_y)
         self.gmm = self.__generate_gmm(train_frames_features)
         self.fisher_vectors = self.__calculate_FV(velocities_scaled)
