@@ -203,10 +203,11 @@ def test_accuracy():
         execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, desc, vel_frame_window)
 
     print("Descrizione della sequenza usando: 1) tutti i frame disponibili, 2) una finestra di N frames centrata sul frame a massima dinamica")
-    vel_frame_window = [0, 6]
+    vel_frame_window = [0, 32, 64]
     for vel in vel_frame_window:
         execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description, vel)
 
-#TODO: correggere finestra eccesso, aggiungere vel lndk 30 in caso solo pos.
+
+# TODO: aggiungere vel lndk 30 in caso solo pos.
 
 test_accuracy()

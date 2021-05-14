@@ -156,9 +156,17 @@ class PreliminaryClustering:
             data_velocities_filtered = np.convolve(data_velocities, np.ones(3) / 3, mode='valid')
             if self.vel_frame_window > 0:
                 max_index, value = max(enumerate(data_velocities_filtered), key=operator.itemgetter(1))
-                index=[*range(max_index-int(self.vel_frame_window/2),max_index+int(self.vel_frame_window/2),1)]
+                if max_index + int(self.vel_frame_window / 2) > lndk_vel.shape[0]:
+                    end = lndk_vel.shape[0]-1
+                else:
+                    end = max_index + int(self.vel_frame_window / 2)
+                if max_index - int(self.vel_frame_window / 2) < 0:
+                    start = 0
+                else:
+                    start = max_index - int(self.vel_frame_window / 2)
+                index = [*range(start, end, 1)]
             else:
-                index=[*range(0, lndk_vel.shape[0]-1)]
+                index = [*range(0, lndk_vel.shape[0] - 1)]
             total_index.append(index)
         return total_index
 
