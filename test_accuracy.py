@@ -8,7 +8,7 @@ from configuration import config
 from utils import get_training_and_test_idx, check_existing_paths, plot_matrix, save_data_on_csv, save_GMM_mean_info
 
 
-def execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description, vel_frame_window):
+def execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description, vel_frame_window, test_num):
     # Type of execution info
     fit_by_bic = config.fit_by_bic
     # Dataset info
@@ -45,16 +45,33 @@ def execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description,
     path_histo_figures = "data/classifier/" + sub_directory + "/histo_figures/"
     preliminary_clustering_path = "data/classifier/" + sub_directory + "/preliminary_clustering.pickle"
     # Model classifier info and paths
-    path_results = "data/classifier/" + sub_directory + "/"
-    path_errors = path_results + "errors_tests/"
-    path_gmm_means = path_results + "/gmm_means/"
-    path_confusion_matrices = path_results + "confusion_matrices/"
-    path_results_csv = path_results + "results.csv"
-    path_conf_matrix_csv = path_results + "confusion_matrix.csv"
+    path = []
+    path.append("test_accuracy/eyes/")
+    path.append("test_accuracy/mouth/")
+    path.append("test_accuracy/eyes_mouth/")
+    path.append("test_accuracy/standard/")
+    path.append("test_accuracy/kernel_16/")
+    path.append("test_accuracy/kernel_64/")
+    path.append("test_accuracy/kernel_128/")
+    path.append("test_accuracy/VAS_6/")
+    path.append("test_accuracy/VAS_7/")
+    path.append("test_accuracy/VAS_8/")
+    path.append("test_accuracy/VAS_9/")
+    path.append("test_accuracy/position/")
+    path.append("test_accuracy/vel_pos/")
+    path.append("test_accuracy/32_frames_max/")
+    path.append("test_accuracy/64_frames_max/")
+    current_test_path = path[test_num]
+
+    path_errors = current_test_path + "errors_tests/"
+    path_gmm_means = current_test_path + "gmm_means/"
+    path_confusion_matrices = current_test_path + "confusion_matrices/"
+    path_results_csv = current_test_path + "results.csv"
+    path_conf_matrix_csv = current_test_path + "confusion_matrix.csv"
     n_jobs = config.n_jobs
 
     if __name__ == '__main__':
-        dir_paths = [path_results, path_errors, path_confusion_matrices, path_gmm_means]
+        dir_paths = [current_test_path, path_errors, path_confusion_matrices, path_gmm_means]
         if save_histo_figures:
             dir_paths.append(path_histo_figures)
         file_paths = [coord_df_path, seq_df_path]
@@ -138,9 +155,9 @@ def execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description,
         mean_error = round(mean_error, 3)
         print("Mean Absolute Error: " + str(mean_error))
 
-        path_errors = path_results + "graphics_errors.png"
-        path_conf_matrix = path_results + "confusion_matrix.png"
-        path_conf_matrix_pain_levels = path_results + "confusion_matrix_pain_levels.png"
+        path_errors = current_test_path + "graphics_errors.png"
+        path_conf_matrix = current_test_path + "confusion_matrix.png"
+        path_conf_matrix_pain_levels = current_test_path + "confusion_matrix_pain_levels.png"
         print("Mean absolute errors detected at each round saved in a csv file on path '" + path_results_csv + "'")
         print("Confusion matrices detected at each round saved in png files on path '" + path_confusion_matrices + "'")
 
@@ -160,23 +177,25 @@ def execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description,
         plt.legend()
         plt.savefig(path_errors)
         plt.close()
-        print("Histogram of the mean absolute error detected saved in a png file on path '" + path_results + "'")
+        print("Histogram of the mean absolute error detected saved in a png file on path '" + current_test_path + "'")
 
 
 def test_accuracy():
     """
-    - Test con landmarks: 1) solo occhi, 2) solo bocca, 3) occhi e bocca, 4) tutti.
-    - Test con numero di clusters per creazione dizionario: 16, 32, 64, 128
-    - Individuazione dei clusters: 1) usando tutte le sequenze di train, 2) usando solo le sequenze di train con VAS maggiore di K=6, 7, 8, 9
-    - Descrizione dei landmarks attraverso: 1) solo posizione, 2) solo velocità, 3) posizione e velocità. In tutti i casi, la descrizione include comunque come primo elemento il vettore di velocità (spostamento) del baricentro
-    - Descrizione della sequenza usando: 1) tutti i frame disponibili, 2) una finestra di N frames centrata sul frame a massima dinamica
+    - Test with landmarks: 1) eyes, 2) mouth, 3) eyes + mouth, 4) all, standard
+    - Test with different number of kernel in clusters: 16, 32, 64, 128
+    - Getting clusters: 1) with all the sequences of train, 2) only with sequences with VAS greater than K = 6, 7, 8, 9
+    - Landmark's description with: 1) only position, 2) only velocity, 3) position and velocity
+    - Sequence's description with: 1) all the available frames, 2) a window of N frmaes centered in the frame with max dynamic
     """
 
-    print("Test con landmarks: 1) Occhi, 2) Bocca, 3) Occhi e Bocca, 4) Tutti")
+    test_num = 0
+    print("Test with landmarks: 1) eyes, 2) mouth, 3) eyes + mouth, 4) all, standard")
     n_kernels_GMM = 32
     threshold_VAS = 0
     description = 'vel'
     vel_frame_window = 0
+
     # Occhi, Bocca, Occhi+Bocca, Standard
     selected_lndks_idx = [[30, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47],
                           [30, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65],
@@ -184,30 +203,37 @@ def test_accuracy():
                            58, 59, 60, 61, 62, 63, 64, 65],
                           [5, 11, 19, 24, 30, 37, 41, 44, 46, 50, 52, 56, 58]]
     for selected_lndks in selected_lndks_idx:
-        execute_train(selected_lndks, n_kernels_GMM, threshold_VAS, description, vel_frame_window)
-
-    print("Test con numero di clusters: 16, 32, 64, 128")
+        execute_train(selected_lndks, n_kernels_GMM, threshold_VAS, description, vel_frame_window, test_num)
+        test_num += 1
+    
+    print("Test with different number of kernel in clusters: 16, 32, 64, 128")
     selected_lndks_idx = [5, 11, 19, 24, 30, 37, 41, 44, 46, 50, 52, 56, 58]
-    n_kernels_GMM = [16, 32, 64, 128]
+    n_kernels_GMM = [16, 64, 128]
     for kernel in n_kernels_GMM:
-        execute_train(selected_lndks_idx, kernel, threshold_VAS, description, vel_frame_window)
+        execute_train(selected_lndks_idx, kernel, threshold_VAS, description, vel_frame_window, test_num)
+        test_num += 1
 
-    print("Individuazione dei clusters: 1) usando tutte le sequenze di train, 2) usando solo le sequenze di train con VAS maggiore di K=6, 7, 8, 9")
-    threshold_VAS = [0, 6, 7, 8, 9]
+
+    print("Getting clusters: 1) with all the sequences of train, 2) only with sequences with VAS greater than K = 6, 7, 8, 9")
+    n_kernels_GMM=32
+    threshold_VAS = [6, 7, 8, 9]
     for threshold in threshold_VAS:
-        execute_train(selected_lndks_idx, n_kernels_GMM, threshold, description, vel_frame_window)
+        execute_train(selected_lndks_idx, n_kernels_GMM, threshold, description, vel_frame_window, test_num)
+        test_num += 1
 
-    print("Descrizione dei landmarks attraverso: 1) solo posizione, 2) solo velocità, 3) posizione e velocità")
-    description = ['pos', 'vel', 'pos+vel']
+    threshold_VAS=0
+    print("Landmark's description with: 1) only position, 2) only velocity, 3) position and velocity")
+    description = ['pos', 'pos+vel']
     for desc in description:
-        execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, desc, vel_frame_window)
+        execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, desc, vel_frame_window, test_num)
+        test_num += 1
 
-    print("Descrizione della sequenza usando: 1) tutti i frame disponibili, 2) una finestra di N frames centrata sul frame a massima dinamica")
-    vel_frame_window = [0, 32, 64]
+    description='vel'
+    print("Sequence's description with: 1) all the available frames, 2) a window of N frmaes centered in the frame with max dynamic")
+    vel_frame_window = [32, 64]
     for vel in vel_frame_window:
-        execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description, vel)
+        execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description, vel, test_num)
+        test_num += 1
 
-
-# TODO: aggiungere vel lndk 30 in caso solo pos.
 
 test_accuracy()

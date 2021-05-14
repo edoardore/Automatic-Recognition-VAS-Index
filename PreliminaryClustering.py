@@ -124,10 +124,12 @@ class PreliminaryClustering:
                 feat_count += 1
         return velocities
 
-    def __get_relevant_frame(self):
+    def __get_relevant_frames(self):
         """
         Returns a window of index of relevant frame for each training sequence, centered on the frame with max vel
         """
+        if self.verbose:
+            print("---- Get relevant frames... ----")
         coord_df = pd.read_csv(self.coord_df_path)
         seq_df = pd.read_csv(self.seq_df_path)
         total_index = []
@@ -156,8 +158,8 @@ class PreliminaryClustering:
             data_velocities_filtered = np.convolve(data_velocities, np.ones(3) / 3, mode='valid')
             if self.vel_frame_window > 0:
                 max_index, value = max(enumerate(data_velocities_filtered), key=operator.itemgetter(1))
-                if max_index + int(self.vel_frame_window / 2) > lndk_vel.shape[0]:
-                    end = lndk_vel.shape[0]-1
+                if max_index + int(self.vel_frame_window / 2) > lndk_vel.shape[0] - 1:
+                    end = lndk_vel.shape[0] - 1
                 else:
                     end = max_index + int(self.vel_frame_window / 2)
                 if max_index - int(self.vel_frame_window / 2) < 0:
@@ -180,11 +182,11 @@ class PreliminaryClustering:
 
         if self.verbose:
             print("---- Preparing features vector of the frame in the training set by velocities... ----")
-        relevant_frames = self.__get_relevant_frame()
+        relevant_frames = self.__get_relevant_frames()
         train_num_frames = sum([len(relevant_frames[count]) for count, video in enumerate(relevant_frames)])
         n_features_for_frame = len(self.selected_lndks_idx)
         if 'pos' in self.description and 'vel' not in self.description:
-            train_frames_features = np.ndarray(shape=(1, train_num_frames, 3, n_features_for_frame))
+            train_frames_features = np.ndarray(shape=(1, train_num_frames, 2, n_features_for_frame))
         if 'pos' not in self.description and 'vel' in self.description:
             train_frames_features = np.ndarray(shape=(1, train_num_frames, 1, n_features_for_frame))
         if 'pos' in self.description and 'vel' in self.description:
