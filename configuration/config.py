@@ -55,3 +55,6 @@ description = 'vel'  # default
 
 # Window frame in range of max sum velocities of each sequence
 vel_frame_window = 0  # 0 = not active
+
+# Select frames only with sum of velocity >= than value
+vel_frame_threshold = 0  # 0 = not active

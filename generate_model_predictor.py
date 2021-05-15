@@ -92,6 +92,7 @@ if __name__ == '__main__':
                                                        description=config.description,
                                                        train_video_idx=clustering_train_videos,
                                                        vel_frame_window=config.vel_frame_window,
+                                                       vel_frame_threshold=config.vel_frame_threshold,
                                                        n_kernels=n_kernels_GMM,
                                                        covariance_type=covariance_type,
                                                        threshold_neutral=threshold_neutral,
