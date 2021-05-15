@@ -196,7 +196,7 @@ def test_accuracy():
     description = 'vel'
     vel_frame_window = 0
 
-    # Occhi, Bocca, Occhi+Bocca, Standard
+    # Eyes, Mouth, Eyes+Mouth, Standard
     selected_lndks_idx = [[30, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47],
                           [30, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65],
                           [30, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
@@ -212,7 +212,6 @@ def test_accuracy():
     for kernel in n_kernels_GMM:
         execute_train(selected_lndks_idx, kernel, threshold_VAS, description, vel_frame_window, test_num)
         test_num += 1
-
 
     print("Getting clusters: 1) with all the sequences of train, 2) only with sequences with VAS greater than K = 6, 7, 8, 9")
     n_kernels_GMM=32
