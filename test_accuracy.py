@@ -8,7 +8,8 @@ from configuration import config
 from utils import get_training_and_test_idx, check_existing_paths, plot_matrix, save_data_on_csv, save_GMM_mean_info
 
 
-def execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description, vel_frame_window, test_num):
+def execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description, vel_frame_window, vel_frame_threshold,
+                  test_num):
     # Type of execution info
     fit_by_bic = config.fit_by_bic
     # Dataset info
@@ -61,6 +62,7 @@ def execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description,
     path.append("test_accuracy/vel_pos/")
     path.append("test_accuracy/32_frames_max/")
     path.append("test_accuracy/64_frames_max/")
+    path.append("test_accuracy/best_config/")
     current_test_path = path[test_num]
 
     path_errors = current_test_path + "errors_tests/"
@@ -105,6 +107,7 @@ def execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description,
                                                            description=description,
                                                            train_video_idx=clustering_train_videos,
                                                            vel_frame_window=vel_frame_window,
+                                                           vel_frame_threshold=vel_frame_threshold,
                                                            n_kernels=n_kernels_GMM,
                                                            covariance_type=covariance_type,
                                                            threshold_neutral=threshold_neutral,
@@ -195,6 +198,7 @@ def test_accuracy():
     threshold_VAS = 0
     description = 'vel'
     vel_frame_window = 0
+    vel_frame_threshold = 0
 
     # Eyes, Mouth, Eyes+Mouth, Standard
     selected_lndks_idx = [[30, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47],
@@ -203,36 +207,46 @@ def test_accuracy():
                            58, 59, 60, 61, 62, 63, 64, 65],
                           [5, 11, 19, 24, 30, 37, 41, 44, 46, 50, 52, 56, 58]]
     for selected_lndks in selected_lndks_idx:
-        execute_train(selected_lndks, n_kernels_GMM, threshold_VAS, description, vel_frame_window, test_num)
+        execute_train(selected_lndks, n_kernels_GMM, threshold_VAS, description, vel_frame_window, vel_frame_threshold,
+                      test_num)
         test_num += 1
-    
+
     print("Test with different number of kernel in clusters: 16, 32, 64, 128")
     selected_lndks_idx = [5, 11, 19, 24, 30, 37, 41, 44, 46, 50, 52, 56, 58]
     n_kernels_GMM = [16, 64, 128]
     for kernel in n_kernels_GMM:
-        execute_train(selected_lndks_idx, kernel, threshold_VAS, description, vel_frame_window, test_num)
+        execute_train(selected_lndks_idx, kernel, threshold_VAS, description, vel_frame_window, vel_frame_threshold,
+                      test_num)
         test_num += 1
 
-    print("Getting clusters: 1) with all the sequences of train, 2) only with sequences with VAS greater than K = 6, 7, 8, 9")
-    n_kernels_GMM=32
+    print(
+        "Getting clusters: 1) with all the sequences of train, 2) only with sequences with VAS greater than K = 6, 7, 8, 9")
+    n_kernels_GMM = 32
     threshold_VAS = [6, 7, 8, 9]
     for threshold in threshold_VAS:
-        execute_train(selected_lndks_idx, n_kernels_GMM, threshold, description, vel_frame_window, test_num)
+        execute_train(selected_lndks_idx, n_kernels_GMM, threshold, description, vel_frame_window, vel_frame_threshold,
+                      test_num)
         test_num += 1
 
-    threshold_VAS=0
+    threshold_VAS = 0
     print("Landmark's description with: 1) only position, 2) only velocity, 3) position and velocity")
     description = ['pos', 'pos+vel']
     for desc in description:
-        execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, desc, vel_frame_window, test_num)
+        execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, desc, vel_frame_window, vel_frame_threshold,
+                      test_num)
         test_num += 1
 
-    description='vel'
-    print("Sequence's description with: 1) all the available frames, 2) a window of N frmaes centered in the frame with max dynamic")
+    description = 'vel'
+    print(
+        "Sequence's description with: 1) all the available frames, 2) a window of N frmaes centered in the frame with max dynamic")
     vel_frame_window = [32, 64]
     for vel in vel_frame_window:
-        execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description, vel, test_num)
+        execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description, vel, vel_frame_threshold, test_num)
         test_num += 1
+
+    print("Test the best configuration")
+    selected_lndks_idx = [5, 11, 19, 24, 30, 37, 41, 44, 46, 50, 52, 56, 58]
+    execute_train(selected_lndks_idx, 32, 9, 'vel', 0, 6, test_num)
 
 
 test_accuracy()
