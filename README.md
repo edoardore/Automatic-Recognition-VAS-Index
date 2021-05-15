@@ -49,6 +49,6 @@ estrae i kernel di appartenenza dei frames nella lista della sequenza 11 e mostr
  
  ## Risultati dei 16 esperimenti visibili in ./test_accuracy
  
-# Original Code by: [Alessandro Arezzo](https://github.com/AlessandroArezzo/Automatic-Recognition-VAS-Index) (2021)
+### Original Code by: [Alessandro Arezzo](https://github.com/AlessandroArezzo/Automatic-Recognition-VAS-Index) (2021)
 
 
