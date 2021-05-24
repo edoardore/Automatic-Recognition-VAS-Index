@@ -58,3 +58,6 @@ vel_frame_window = 0  # 0 = not active
 
 # Select frames only with sum of velocity >= than value
 vel_frame_threshold = 0  # 0 = not active
+
+# Boolean flag for the scaling of velocity
+scaling_flag = True

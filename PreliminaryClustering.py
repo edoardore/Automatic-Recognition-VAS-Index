@@ -6,6 +6,7 @@ from sklearn.preprocessing import RobustScaler
 import matplotlib.pyplot as plt
 import matplotlib
 import operator
+import configuration.config
 
 matplotlib.use('Agg')
 
@@ -13,7 +14,8 @@ matplotlib.use('Agg')
 class PreliminaryClustering:
     """Class that is responsible for obtaining the relevant configurations for the classification of the VAS index. """
 
-    def __init__(self, coord_df_path, seq_df_path, num_lndks, selected_lndks_idx, description, vel_frame_window, vel_frame_threshold,
+    def __init__(self, coord_df_path, seq_df_path, num_lndks, selected_lndks_idx, description, vel_frame_window,
+                 vel_frame_threshold,
                  train_video_idx, n_kernels, threshold_neutral, covariance_type='diag', verbose=True, fit_by_bic=False):
         self.coord_df_path = coord_df_path  # Path of csv file contained coordinates of the landmarks
         self.seq_df_path = seq_df_path  # Path of csv file contained sequences informations
@@ -22,7 +24,7 @@ class PreliminaryClustering:
         self.train_video_idx = train_video_idx  # Indexes of the videos to use for training
         self.description = description  # indicate pos, vel, pos+vel extracted from each frame
         self.vel_frame_window = vel_frame_window  # the lenght of max frame vel in a sequence
-        self.vel_frame_threshold= vel_frame_threshold # the threshold to select important frame in each sequence
+        self.vel_frame_threshold = vel_frame_threshold  # the threshold to select important frame in each sequence
         self.fit_by_bic = fit_by_bic  # Define if the GMM must be fitted using fit by bic
         self.threshold_neutral = threshold_neutral  # Thresholds to use fo extraction of the neutral configurations
         self.n_kernels = n_kernels  # Number of kernels of the gmm to trained
@@ -169,10 +171,10 @@ class PreliminaryClustering:
                     start = max_index - int(self.vel_frame_window / 2)
                 index = [*range(start, end, 1)]
             else:
-                if self.vel_frame_threshold==0:
+                if self.vel_frame_threshold == 0:
                     index = [*range(0, lndk_vel.shape[0] - 1)]
 
-            if self.vel_frame_threshold>0:
+            if self.vel_frame_threshold > 0:
                 index = []
                 for count, vel in enumerate(data_velocities_filtered):
                     if vel > self.vel_frame_threshold:
@@ -330,11 +332,12 @@ class PreliminaryClustering:
         If plot_and_save_histo is setted on True value the figures of histograms of videos is saved in files
         """
         velocities = self.__get_velocities_frames()
-        velocities_scaled = self.__scale_features(velocities)
+        if configuration.config.scaling_flag:
+            velocities = self.__scale_features(velocities)
         positions_x, positions_y = self.__get_positions_frames()
-        train_frames_features = self.__prepare_training_features(velocities_scaled, positions_x, positions_y)
+        train_frames_features = self.__prepare_training_features(velocities, positions_x, positions_y)
         self.gmm = self.__generate_gmm(train_frames_features)
-        self.fisher_vectors = self.__calculate_FV(velocities_scaled)
+        self.fisher_vectors = self.__calculate_FV(velocities)
         self.histograms_of_videos = self.__generate_histograms()
         self.index_relevant_configurations, self.index_neutral_configurations = \
             self.__extract_relevant_and_neutral_configurations()

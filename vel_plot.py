@@ -3,7 +3,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 selected_lndks_idx = range(0, 66)
-seq_name = "ak064t1aaaff"
+seq_name = "ib109t1aeaff"
 vel_frame_threshold = 30
 
 
