@@ -231,7 +231,7 @@ def test_accuracy():
     threshold_VAS = [6, 7, 8, 9]
     for threshold in threshold_VAS:
         execute_train(selected_lndks_idx, n_kernels_GMM, threshold, description, vel_frame_window, vel_frame_threshold,
-                      test_num)
+                      test_num, saving_folder)
         test_num += 1
 
     threshold_VAS = 0
@@ -253,7 +253,7 @@ def test_accuracy():
 
     print("Test the best configuration")
     selected_lndks_idx = [5, 11, 19, 24, 30, 37, 41, 44, 46, 50, 52, 56, 58]
-    execute_train(selected_lndks_idx, 32, 9, 'vel', 0, 6, test_num)
+    execute_train(selected_lndks_idx, 32, 9, 'vel', 0, 6, test_num, saving_folder)
 
 
 test_accuracy()
