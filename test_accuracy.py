@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+import configuration.config
 from PreliminaryClustering import PreliminaryClustering
 from ModelSVR import ModelSVR
 from configuration import config
@@ -9,7 +10,7 @@ from utils import get_training_and_test_idx, check_existing_paths, plot_matrix, 
 
 
 def execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description, vel_frame_window, vel_frame_threshold,
-                  test_num):
+                  test_num, saving_folder):
     # Type of execution info
     fit_by_bic = config.fit_by_bic
     # Dataset info
@@ -47,22 +48,22 @@ def execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description,
     preliminary_clustering_path = "data/classifier/" + sub_directory + "/preliminary_clustering.pickle"
     # Model classifier info and paths
     path = []
-    path.append("test_accuracy/eyes/")
-    path.append("test_accuracy/mouth/")
-    path.append("test_accuracy/eyes_mouth/")
-    path.append("test_accuracy/standard/")
-    path.append("test_accuracy/kernel_16/")
-    path.append("test_accuracy/kernel_64/")
-    path.append("test_accuracy/kernel_128/")
-    path.append("test_accuracy/VAS_6/")
-    path.append("test_accuracy/VAS_7/")
-    path.append("test_accuracy/VAS_8/")
-    path.append("test_accuracy/VAS_9/")
-    path.append("test_accuracy/position/")
-    path.append("test_accuracy/vel_pos/")
-    path.append("test_accuracy/32_frames_max/")
-    path.append("test_accuracy/64_frames_max/")
-    path.append("test_accuracy/best_config/")
+    path.append(saving_folder + "/eyes/")
+    path.append(saving_folder + "/mouth/")
+    path.append(saving_folder + "/eyes_mouth/")
+    path.append(saving_folder + "/standard/")
+    path.append(saving_folder + "/kernel_16/")
+    path.append(saving_folder + "/kernel_64/")
+    path.append(saving_folder + "/kernel_128/")
+    path.append(saving_folder + "/VAS_6/")
+    path.append(saving_folder + "/VAS_7/")
+    path.append(saving_folder + "/VAS_8/")
+    path.append(saving_folder + "/VAS_9/")
+    path.append(saving_folder + "/position/")
+    path.append(saving_folder + "/vel_pos/")
+    path.append(saving_folder + "/32_frames_max/")
+    path.append(saving_folder + "/64_frames_max/")
+    path.append(saving_folder + "/best_config/")
     current_test_path = path[test_num]
 
     path_errors = current_test_path + "errors_tests/"
@@ -191,7 +192,12 @@ def test_accuracy():
     - Landmark's description with: 1) only position, 2) only velocity, 3) position and velocity
     - Sequence's description with: 1) all the available frames, 2) a window of N frmaes centered in the frame with max dynamic
     """
-
+    if configuration.config.SVR_kernel_type == 'rbf':
+        saving_folder = 'test_accuracy'
+    elif configuration.config.SVR_kernel_type == 'poly':
+        saving_folder = 'test_accuracy_poly'
+    else:
+        return
     test_num = 0
     print("Test with landmarks: 1) eyes, 2) mouth, 3) eyes + mouth, 4) all, standard")
     n_kernels_GMM = 32
@@ -208,7 +214,7 @@ def test_accuracy():
                           [5, 11, 19, 24, 30, 37, 41, 44, 46, 50, 52, 56, 58]]
     for selected_lndks in selected_lndks_idx:
         execute_train(selected_lndks, n_kernels_GMM, threshold_VAS, description, vel_frame_window, vel_frame_threshold,
-                      test_num)
+                      test_num, saving_folder)
         test_num += 1
 
     print("Test with different number of kernel in clusters: 16, 32, 64, 128")
@@ -216,7 +222,7 @@ def test_accuracy():
     n_kernels_GMM = [16, 64, 128]
     for kernel in n_kernels_GMM:
         execute_train(selected_lndks_idx, kernel, threshold_VAS, description, vel_frame_window, vel_frame_threshold,
-                      test_num)
+                      test_num, saving_folder)
         test_num += 1
 
     print(
@@ -233,7 +239,7 @@ def test_accuracy():
     description = ['pos', 'pos+vel']
     for desc in description:
         execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, desc, vel_frame_window, vel_frame_threshold,
-                      test_num)
+                      test_num, saving_folder)
         test_num += 1
 
     description = 'vel'
@@ -241,7 +247,8 @@ def test_accuracy():
         "Sequence's description with: 1) all the available frames, 2) a window of N frmaes centered in the frame with max dynamic")
     vel_frame_window = [32, 64]
     for vel in vel_frame_window:
-        execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description, vel, vel_frame_threshold, test_num)
+        execute_train(selected_lndks_idx, n_kernels_GMM, threshold_VAS, description, vel, vel_frame_threshold, test_num,
+                      saving_folder)
         test_num += 1
 
     print("Test the best configuration")

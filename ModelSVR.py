@@ -3,6 +3,8 @@ import pickle
 import numpy as np
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
+
+import configuration.config
 from utils import plot_matrix
 
 
@@ -76,7 +78,7 @@ class ModelSVR:
             print("---- Find parameters that minimizes mean absolute error... ----")
         training_set_desc = np.asarray([self.desc_relevant_config_videos[i].flatten() for i in self.train_video_idx])
         training_set_vas = np.asarray([self.vas_sequences[i] for i in self.train_video_idx])
-        param = {'kernel': ['rbf'], 'C': np.arange(5, 100, 5),
+        param = {'kernel': [configuration.config.SVR_kernel_type], 'C': np.arange(5, 100, 5),
                  'epsilon': [0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.01, 0.1, 1],
                  'gamma': [0.1, 1, 3, 5, 10, 15, 20]}
         grid_result = GridSearchCV(estimator=svm.SVR(), param_grid=param, scoring='neg_mean_absolute_error',

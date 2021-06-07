@@ -61,3 +61,6 @@ vel_frame_threshold = 0  # 0 = not active
 
 # Boolean flag for the scaling of velocity
 scaling_flag = True
+
+# Select kernel type in ModelSVR
+SVR_kernel_type = 'poly' # or 'linear', 'rbf', 'sigmoid', 'precomputed'
